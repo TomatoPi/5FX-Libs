@@ -15,17 +15,46 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-///
-///  \file jackwrap.hpp
-/// 
-///  \author DAGO Kokri Esaïe <dago.esaie@protonmail.com>
-///  \date 2021-02-03
-///
+ ///
+ ///  \file jackwrap.hpp
+ /// 
+ ///  \author DAGO Kokri Esaïe <dago.esaie@protonmail.com>
+ ///  \date 2021-02-03
+ ///
 
 #pragma once
 
+#include <jack/jack.h>
+
+#include <initializer_list>
+#include <string>
+#include <tuple>
+
 namespace sfx {
   namespace jack {
-    
+
+
+    struct ClientOpenFailure {};
+    struct PortOpenFailure {};
+    struct CallbackRegisterFailure {};
+    struct ClientActivationFailure {};
+
+    struct Client {
+
+      jack_client_t* client;
+
+      ~Client();
+
+      void open(
+        const std::string& name,
+        std::initializer_list<std::tuple<
+        jack_port_t**,
+        const char*,
+        const char*,
+        unsigned long>> ports,
+        JackProcessCallback callback);
+
+      void activate();
+    };
   }
 }

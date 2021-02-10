@@ -15,11 +15,54 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-///
-///  \file jackwrap.cpp
-/// 
-///  \author DAGO Kokri Esaïe <dago.esaie@protonmail.com>
-///  \date 2021-02-04
-///
+ ///
+ ///  \file jackwrap.cpp
+ /// 
+ ///  \author DAGO Kokri Esaïe <dago.esaie@protonmail.com>
+ ///  \date 2021-02-04
+ ///
 
 #include "jackwrap.hpp"
+
+namespace sfx {
+  namespace jack {
+
+    Client::~Client() {
+      jack_deactivate(client);
+      jack_client_close(client);
+    }
+
+    void Client::open(
+      const std::string& name,
+      std::initializer_list<std::tuple<
+      jack_port_t**,
+      const char*,
+      const char*,
+      unsigned long>> ports,
+      JackProcessCallback callback) {
+
+      JackStatus status;
+      client = jack_client_open(name.c_str(), JackNullOption, &status);
+      if (!client) {
+        throw ClientOpenFailure{};
+      }
+
+      for (auto [port, name, type, flags] : ports) {
+        *port = jack_port_register(client, name, type, flags, 0);
+        if (nullptr == *port) {
+          throw PortOpenFailure{};
+        }
+      }
+
+      if (jack_set_process_callback(client, callback, nullptr)) {
+        throw CallbackRegisterFailure{};
+      }
+    }
+
+    void Client::activate() {
+      if (jack_activate(client)) {
+        throw ClientActivationFailure{};
+      }
+    }
+  }
+}
